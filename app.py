@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import re
 
 app = Flask(__name__)
 
@@ -30,7 +31,7 @@ def fetch_bill_detail(congress, bill_type, bill_number):
     resp.raise_for_status()
     return resp.json()
 
-def fetch_bill_text_html_url(congress, bill_type, bill_number):
+def fetch_bill_text(congress, bill_type, bill_number):
     url = f"https://api.congress.gov/v3/bill/{congress}/{bill_type.lower()}/{bill_number}/text"
     params = {"api_key": CONGRESS_API_KEY}
     resp = requests.get(url, params=params)
@@ -41,8 +42,18 @@ def fetch_bill_text_html_url(congress, bill_type, bill_number):
         latest = versions[0]
         for fmt in latest.get("formats", []):
             if fmt.get("type") == "HTML":
+                # 取得 HTML 內容網址
                 return fmt.get("url")
     return None
+
+def extract_effective_date_from_summary(summary):
+    # 嘗試從摘要中找生效日關鍵字
+    if not summary:
+        return "未明確規定"
+    match = re.search(r"(take effect.*?\.|effective date.*?\.)", summary, re.IGNORECASE)
+    if match:
+        return match.group(0).strip()
+    return "未明確規定"
 
 def get_congress_gov_url(bill):
     congress = bill.get("congress")
@@ -69,7 +80,8 @@ def send_telegram_message(text):
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": text,
-        "parse_mode": "Markdown"
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True
     }
     requests.post(url, data=payload)
 
@@ -87,22 +99,22 @@ def trigger():
             bill_type = bill.get("type")
             bill_number = bill.get("number")
             summary = ""
-            html_url = None
-            # 取得法案摘要與 HTML 原文連結
+            effective_date = "未明確規定"
             if congress and bill_type and bill_number:
                 try:
                     detail = fetch_bill_detail(congress, bill_type, bill_number)
                     summary = detail.get("bill", {}).get("summary", {}).get("text", "")
+                    effective_date = extract_effective_date_from_summary(summary)
                 except Exception as e:
                     summary = ""
-                try:
-                    html_url = fetch_bill_text_html_url(congress, bill_type, bill_number)
-                except Exception as e:
-                    html_url = None
             url = get_congress_gov_url(bill)
-            msg = f"*新法律通過！*\n{title}\n\n{summary}\n[查看法案]({url})"
-            if html_url:
-                msg += f"\n[法案原文（HTML）]({html_url})"
+            msg = (
+                "*新法律通過！*\n"
+                f"法案名稱: {title}\n"
+                f"生效時間: {effective_date}\n"
+                f"法案摘要: {summary}\n"
+                f"法案網址連結: {url}"
+            )
             send_telegram_message(msg)
         return jsonify({"status": "ok", "message": "Notification sent!"})
     except Exception as e:
