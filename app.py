@@ -25,8 +25,8 @@ def fetch_latest_enacted_laws():
 
 def get_congress_gov_url(bill):
     congress = bill.get("congress")
-    bill_type = bill.get("type")  # 這裡改成 type
-    bill_number = bill.get("number")  # 這裡改成 number
+    bill_type = bill.get("type")
+    bill_number = bill.get("number")
     bill_type_map = {
         "HR": "house-bill",
         "S": "senate-bill",
