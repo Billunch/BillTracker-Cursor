@@ -19,6 +19,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Debug API Key
+        run: echo "API Key length: ${#CONGRESS_API_KEY}"
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+
       - name: Run congress law notifier
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
