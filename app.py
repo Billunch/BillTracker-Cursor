@@ -23,6 +23,24 @@ def fetch_latest_enacted_laws():
     data = resp.json()
     return data.get("bills", [])
 
+def get_congress_gov_url(bill):
+    congress = bill.get("congress")
+    bill_type = bill.get("billType")
+    bill_number = bill.get("billNumber")
+    bill_type_map = {
+        "hr": "house-bill",
+        "s": "senate-bill",
+        "jres": "joint-resolution",
+        "hres": "house-resolution",
+        "sres": "senate-resolution",
+        "hconres": "house-concurrent-resolution",
+        "sconres": "senate-concurrent-resolution"
+    }
+    bill_type_str = bill_type_map.get(bill_type.lower(), bill_type)
+    if congress and bill_type_str and bill_number:
+        return f"https://www.congress.gov/bill/{congress}th-congress/{bill_type_str}/{bill_number}"
+    return "https://www.congress.gov"
+
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -42,7 +60,7 @@ def trigger():
         bills = fetch_latest_enacted_laws()
         for bill in bills:
             title = bill.get("title", "(No Title)")
-            url = bill.get("url", "https://congress.gov")  # 直接用 API 的 url 欄位
+            url = get_congress_gov_url(bill)
             msg = f"*新法律通過！*\n{title}\n[查看法案]({url})"
             send_telegram_message(msg)
         return jsonify({"status": "ok", "message": "Notification sent!"})
