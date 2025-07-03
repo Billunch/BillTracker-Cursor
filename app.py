@@ -18,8 +18,6 @@ def fetch_latest_enacted_laws():
         "sort": "latestActionDate:desc",
         "limit": 5
     }
-    # Debug: 印出 API 金鑰（測試用，部署時可刪除）
-    print("CONGRESS_API_KEY:", CONGRESS_API_KEY)
     resp = requests.get(url, params=params)
     resp.raise_for_status()
     data = resp.json()
@@ -44,7 +42,8 @@ def trigger():
         bills = fetch_latest_enacted_laws()
         for bill in bills:
             title = bill.get("title", "(No Title)")
-            url = bill.get("url", "https://congress.gov")
+            # 優先使用正確的 Congress.gov 法案網址
+            url = bill.get("congressDotGovUrl") or bill.get("congressGovUrl") or "https://congress.gov"
             msg = f"*新法律通過！*\n{title}\n[查看法案]({url})"
             send_telegram_message(msg)
         return jsonify({"status": "ok", "message": "Notification sent!"})
