@@ -30,6 +30,20 @@ def fetch_bill_detail(congress, bill_type, bill_number):
     resp.raise_for_status()
     return resp.json()
 
+def fetch_bill_text_html_url(congress, bill_type, bill_number):
+    url = f"https://api.congress.gov/v3/bill/{congress}/{bill_type.lower()}/{bill_number}/text"
+    params = {"api_key": CONGRESS_API_KEY}
+    resp = requests.get(url, params=params)
+    resp.raise_for_status()
+    data = resp.json()
+    versions = data.get("textVersions", [])
+    if versions:
+        latest = versions[0]
+        for fmt in latest.get("formats", []):
+            if fmt.get("type") == "HTML":
+                return fmt.get("url")
+    return None
+
 def get_congress_gov_url(bill):
     congress = bill.get("congress")
     bill_type = bill.get("type")
@@ -73,15 +87,22 @@ def trigger():
             bill_type = bill.get("type")
             bill_number = bill.get("number")
             summary = ""
-            # 取得法案摘要
+            html_url = None
+            # 取得法案摘要與 HTML 原文連結
             if congress and bill_type and bill_number:
                 try:
                     detail = fetch_bill_detail(congress, bill_type, bill_number)
                     summary = detail.get("bill", {}).get("summary", {}).get("text", "")
                 except Exception as e:
                     summary = ""
+                try:
+                    html_url = fetch_bill_text_html_url(congress, bill_type, bill_number)
+                except Exception as e:
+                    html_url = None
             url = get_congress_gov_url(bill)
             msg = f"*新法律通過！*\n{title}\n\n{summary}\n[查看法案]({url})"
+            if html_url:
+                msg += f"\n[法案原文（HTML）]({html_url})"
             send_telegram_message(msg)
         return jsonify({"status": "ok", "message": "Notification sent!"})
     except Exception as e:
