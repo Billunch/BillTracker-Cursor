@@ -2,20 +2,23 @@ name: Notify New US Laws
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # UTC 0:00 = 台灣 8:00
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # 每天 UTC 0:00（台灣早上8點）
+  workflow_dispatch:      # 允許手動觸發
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install dependencies
         run: pip install -r requirements.txt
+
       - name: Run congress law notifier
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
