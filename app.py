@@ -24,41 +24,22 @@ def fetch_latest_enacted_laws():
     return data.get("bills", [])
 
 def get_congress_gov_url(bill):
-    # 嘗試多種欄位名稱
     congress = bill.get("congress")
-    bill_type = bill.get("billType")
-    bill_number = bill.get("billNumber") or bill.get("number")
-    bill_id = bill.get("billId")
+    bill_type = bill.get("type")  # 這裡改成 type
+    bill_number = bill.get("number")  # 這裡改成 number
     bill_type_map = {
-        "hr": "house-bill",
-        "s": "senate-bill",
-        "jres": "joint-resolution",
-        "hres": "house-resolution",
-        "sres": "senate-resolution",
-        "hconres": "house-concurrent-resolution",
-        "sconres": "senate-concurrent-resolution"
+        "HR": "house-bill",
+        "S": "senate-bill",
+        "JRES": "joint-resolution",
+        "HRES": "house-resolution",
+        "SRES": "senate-resolution",
+        "HCONRES": "house-concurrent-resolution",
+        "SCONRES": "senate-concurrent-resolution"
     }
-    bill_type_str = bill_type_map.get(bill_type.lower(), bill_type) if bill_type else None
+    bill_type_str = bill_type_map.get(bill_type.upper(), bill_type.lower()) if bill_type else None
 
-    # 1. 優先用 API 回傳的 url 欄位（如果有且是 www.congress.gov）
-    url = bill.get("url")
-    if url and url.startswith("https://www.congress.gov/bill/"):
-        return url
-
-    # 2. 用 billId 拆解
-    if not (congress or bill_type or bill_number) and bill_id:
-        # billId 例：hr1234-118
-        import re
-        m = re.match(r"([a-z]+)(\\d+)-(\d+)", bill_id)
-        if m:
-            bill_type, bill_number, congress = m.group(1), m.group(2), m.group(3)
-            bill_type_str = bill_type_map.get(bill_type.lower(), bill_type)
-    
-    # 3. 組合網址
     if congress and bill_type_str and bill_number:
         return f"https://www.congress.gov/bill/{congress}th-congress/{bill_type_str}/{bill_number}"
-
-    # 4. fallback 並 debug
     print("缺少欄位，bill內容：", bill)
     return "https://www.congress.gov"
 
