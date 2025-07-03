@@ -36,7 +36,10 @@ def get_congress_gov_url(bill):
         "hconres": "house-concurrent-resolution",
         "sconres": "senate-concurrent-resolution"
     }
-    bill_type_str = bill_type_map.get(bill_type.lower(), bill_type)
+    if bill_type:
+        bill_type_str = bill_type_map.get(bill_type.lower(), bill_type)
+    else:
+        bill_type_str = None
     if congress and bill_type_str and bill_number:
         return f"https://www.congress.gov/bill/{congress}th-congress/{bill_type_str}/{bill_number}"
     return "https://www.congress.gov"
