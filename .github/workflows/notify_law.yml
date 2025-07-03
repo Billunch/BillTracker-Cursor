@@ -2,7 +2,7 @@ name: Notify New US Laws
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 每天 UTC 0:00（台灣早上8點）
+    - cron: '0 0 * * *'  # 每天 UTC 0:00 (台灣早上8點)
   workflow_dispatch:
 
 jobs:
