@@ -18,6 +18,8 @@ def fetch_latest_enacted_laws():
         "sort": "latestActionDate:desc",
         "limit": 5
     }
+    # Debug: 印出 API 金鑰（測試用，部署時可刪除）
+    print("CONGRESS_API_KEY:", CONGRESS_API_KEY)
     resp = requests.get(url, params=params)
     resp.raise_for_status()
     data = resp.json()
