@@ -23,6 +23,13 @@ def fetch_latest_enacted_laws():
     data = resp.json()
     return data.get("bills", [])
 
+def fetch_bill_detail(congress, bill_type, bill_number):
+    url = f"https://api.congress.gov/v3/bill/{congress}/{bill_type.lower()}/{bill_number}"
+    params = {"api_key": CONGRESS_API_KEY}
+    resp = requests.get(url, params=params)
+    resp.raise_for_status()
+    return resp.json()
+
 def get_congress_gov_url(bill):
     congress = bill.get("congress")
     bill_type = bill.get("type")
@@ -62,8 +69,19 @@ def trigger():
         bills = fetch_latest_enacted_laws()
         for bill in bills:
             title = bill.get("title", "(No Title)")
+            congress = bill.get("congress")
+            bill_type = bill.get("type")
+            bill_number = bill.get("number")
+            summary = ""
+            # 取得法案摘要
+            if congress and bill_type and bill_number:
+                try:
+                    detail = fetch_bill_detail(congress, bill_type, bill_number)
+                    summary = detail.get("bill", {}).get("summary", {}).get("text", "")
+                except Exception as e:
+                    summary = ""
             url = get_congress_gov_url(bill)
-            msg = f"*新法律通過！*\n{title}\n[查看法案]({url})"
+            msg = f"*新法律通過！*\n{title}\n\n{summary}\n[查看法案]({url})"
             send_telegram_message(msg)
         return jsonify({"status": "ok", "message": "Notification sent!"})
     except Exception as e:
