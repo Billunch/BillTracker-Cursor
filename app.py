@@ -72,7 +72,7 @@ def get_congress_gov_url(bill):
 
     if congress and bill_type_str and bill_number:
         return f"https://www.congress.gov/bill/{congress}th-congress/{bill_type_str}/{bill_number}"
-    print("缺少欄位，bill內容：", bill)
+    print("缺少欄位，bill number：", bill.get("number"))
     return "https://www.congress.gov"
 
 def send_telegram_message(text):
