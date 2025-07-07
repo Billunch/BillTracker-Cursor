@@ -6,6 +6,7 @@ import re
 app = Flask(__name__)
 
 CONGRESS_API_KEY = os.environ.get("CONGRESS_API_KEY")
+print("API KEY:", CONGRESS_API_KEY)
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
@@ -103,7 +104,12 @@ def trigger():
             if congress and bill_type and bill_number:
                 try:
                     detail = fetch_bill_detail(congress, bill_type, bill_number)
-                    summary = detail.get("bill", {}).get("summary", {}).get("text", "")
+                    # 修正摘要取得方式
+                    summaries = detail.get("bill", {}).get("summaries", [])
+                    if summaries and isinstance(summaries, list):
+                        summary = summaries[0].get("text", "")
+                    else:
+                        summary = detail.get("bill", {}).get("summary", {}).get("text", "")
                     effective_date = extract_effective_date_from_summary(summary)
                 except Exception as e:
                     summary = ""
